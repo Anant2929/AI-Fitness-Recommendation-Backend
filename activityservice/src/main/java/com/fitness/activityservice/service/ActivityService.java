@@ -23,13 +23,6 @@ public class ActivityService {
 
     public ActivityResponse trackActivity(ActivityRequest activityRequest) {
 
-        // 🔴 STEP 1: Validation Bypassed (Debugging ke liye)
-        // boolean isValidUser = userValidationService.validateUser(activityRequest.getUserId());
-        // if(!isValidUser){
-        //    throw new RuntimeException("Invalid User: " + activityRequest.getUserId());
-        // }
-
-        // 🟢 Object Creation
         Activity activity = Activity.builder()
                 .userId(activityRequest.getUserId())
                 .type(activityRequest.getType())
@@ -47,29 +40,26 @@ public class ActivityService {
 
         Activity savedActivity;
         try {
-            // 🔴 MAIN ACTION: Saving to DB
+            
             savedActivity = activityRepository.save(activity);
 
-            // ✅ SUCCESS LOG
+            
             System.out.println("✅ DEBUG: Successfully Saved! ID: " + savedActivity.getId());
 
         } catch (Exception e) {
-            // ❌ FAILURE LOG (Ye sabse important hai)
             System.out.println("❌ DEBUG: MongoDB Save Failed!");
             System.out.println("💥 ERROR MESSAGE: " + e.getMessage());
-            e.printStackTrace(); // Pura stack trace print karega
+            e.printStackTrace(); 
             throw new RuntimeException("Database Save Failed: " + e.getMessage());
         }
 
-        // 🔵 KAFKA SECTION
+        
         try {
             System.out.println("📨 DEBUG: Sending to Kafka Topic: " + topicName);
             kafkaTemplate.send(topicName , savedActivity.getUserId() , savedActivity);
             System.out.println("✅ DEBUG: Sent to Kafka successfully");
         } catch (Exception e) {
             System.out.println("❌ DEBUG: Kafka Send Failed: " + e.getMessage());
-            // Kafka fail hone par hum process stop nahi kar rahe, bas log kar rahe hain
-            // throw new RuntimeException("Failed to send activity to Kafka: " + e.getMessage());
         }
 
         return mapToResponse(savedActivity);
